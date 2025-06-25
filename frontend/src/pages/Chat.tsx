@@ -73,7 +73,7 @@ export default function Chat() {
         </div>
         
         <ChatBox 
-          documentId={documentId || undefined}
+          fileId={documentId || undefined}
           onError={handleChatError}
         />
         
