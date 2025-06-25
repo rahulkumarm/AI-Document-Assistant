@@ -9,7 +9,15 @@ import PyPDF2
 import io
 from typing import List, Dict, Any
 import logging
-import ollama
+
+# Optional Ollama import (not available on Railway)
+try:
+    import ollama
+    OLLAMA_AVAILABLE = True
+except ImportError:
+    OLLAMA_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning("Ollama not available - LLM features will be disabled")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -17,14 +25,21 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="AI Project Backend (Enhanced)",
-    description="Enhanced FastAPI backend with real RAG functionality using ChromaDB and Llama 3.2",
+    description="Enhanced FastAPI backend with real RAG functionality using ChromaDB and embeddings",
     version="1.0.0"
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"],
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://localhost:5174", 
+        "http://localhost:5175", 
+        "http://localhost:5176",
+        "https://*.vercel.app",  # Allow Vercel deployments
+        "https://*.railway.app"  # Allow Railway deployments
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,35 +52,39 @@ collection = chroma_client.get_or_create_collection(name="documents")
 # Initialize embedding model
 embedder = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Initialize Llama model via Ollama
-logger.info("Initializing Llama 3.2 via Ollama...")
-try:
-    # Test connection to Ollama
-    models = ollama.list()
-    available_models = [model.model for model in models.models]  # Fixed: access model.model attribute
-    logger.info(f"Available Ollama models: {available_models}")
-    
-    if 'llama3.2:3b' in available_models:
-        OLLAMA_MODEL = 'llama3.2:3b'
-        logger.info("Llama 3.2 3B model ready!")
-        llm_available = True
+# Initialize Llama model via Ollama (if available)
+llm_available = False
+OLLAMA_MODEL = None
+
+if OLLAMA_AVAILABLE:
+    logger.info("Initializing Llama 3.2 via Ollama...")
+    try:
+        # Test connection to Ollama
+        models = ollama.list()
+        available_models = [model.model for model in models.models]
+        logger.info(f"Available Ollama models: {available_models}")
         
-        # Test the model with a simple query
-        test_response = ollama.generate(
-            model=OLLAMA_MODEL,
-            prompt="Test: What is 2+2?",
-            options={'num_predict': 10}
-        )
-        logger.info(f"Model test successful: {test_response['response'][:50]}...")
-        
-    else:
-        logger.warning("Llama 3.2 not found. Please run: ollama pull llama3.2:3b")
-        llm_available = False
-        
-except Exception as e:
-    logger.error(f"Error connecting to Ollama: {str(e)}")
-    logger.info("Make sure Ollama is running: brew services start ollama")
-    llm_available = False
+        if 'llama3.2:3b' in available_models:
+            OLLAMA_MODEL = 'llama3.2:3b'
+            logger.info("Llama 3.2 3B model ready!")
+            llm_available = True
+            
+            # Test the model with a simple query
+            test_response = ollama.generate(
+                model=OLLAMA_MODEL,
+                prompt="Test: What is 2+2?",
+                options={'num_predict': 10}
+            )
+            logger.info(f"Model test successful: {test_response['response'][:50]}...")
+            
+        else:
+            logger.warning("Llama 3.2 not found. Please run: ollama pull llama3.2:3b")
+            
+    except Exception as e:
+        logger.error(f"Error connecting to Ollama: {str(e)}")
+        logger.info("Make sure Ollama is running: brew services start ollama")
+else:
+    logger.info("Ollama not available - running in embedding/search-only mode")
 
 class AskRequest(BaseModel):
     file_id: str
