@@ -89,7 +89,8 @@ export default function PDFUploader({ onUploadSuccess, onUploadError, onFileSele
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
 
-      const response = await fetch('http://localhost:8000/upload', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${apiUrl}/upload`, {
         method: 'POST',
         body: formData,
         signal: controller.signal
