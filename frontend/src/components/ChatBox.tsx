@@ -51,7 +51,9 @@ export default function ChatBox({ fileId, onError }: ChatBoxProps) {
     setIsLoading(true)
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      // Temporary hardcoded URL for testing - replace with environment variable
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://ai-document-assistant-production.up.railway.app'
+      console.log('Using API URL:', apiUrl) // Debug log
       const response = await fetch(`${apiUrl}/ask`, {
         method: 'POST',
         headers: {
