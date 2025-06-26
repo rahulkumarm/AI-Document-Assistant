@@ -9,6 +9,7 @@ import PyPDF2
 import io
 from typing import List, Dict, Any
 import logging
+import re
 
 # Optional Ollama import (not available on Railway)
 try:
@@ -29,17 +30,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Add CORS middleware
+# Custom CORS origin checker for Vercel deployments
+def check_cors_origin(origin: str) -> bool:
+    """Check if origin is allowed for CORS"""
+    allowed_patterns = [
+        r"^http://localhost:\d+$",  # Local development
+        r"^https://.*\.vercel\.app$",  # Any Vercel deployment
+        r"^https://.*\.railway\.app$",  # Any Railway deployment
+        r"^https://ai-document-assistant.*\.vercel\.app$",  # Specific project deployments
+    ]
+    
+    for pattern in allowed_patterns:
+        if re.match(pattern, origin):
+            return True
+    return False
+
+# Add CORS middleware with custom origin checker
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", 
-        "http://localhost:5174", 
-        "http://localhost:5175", 
-        "http://localhost:5176",
-        "https://*.vercel.app",  # Allow Vercel deployments
-        "https://*.railway.app"  # Allow Railway deployments
-    ],
+    allow_origin_regex=r"^(http://localhost:\d+|https://.*\.vercel\.app|https://.*\.railway\.app)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
