@@ -45,10 +45,19 @@ def check_cors_origin(origin: str) -> bool:
             return True
     return False
 
-# Add CORS middleware with custom origin checker
+# Add CORS middleware with explicit origins (better Railway compatibility)
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"^(http://localhost:\d+|https://.*\.vercel\.app|https://.*\.railway\.app)$",
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://localhost:5174", 
+        "http://localhost:5175", 
+        "http://localhost:5176",
+        "https://ai-document-assistant-blmet8y2n-rahul-kumars-projects-bbeb7f6d.vercel.app",
+        "https://ai-document-assistant-git-main-rahul-kumars-projects-bbeb7f6d.vercel.app",
+        "https://ai-document-assistant.vercel.app",
+        "https://ai-document-assistant-production.up.railway.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
